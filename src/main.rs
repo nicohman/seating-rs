@@ -10,19 +10,18 @@ struct Pod {
 }
 struct Arrange {
     pods: Vec<Pod>,
-    modN: i32,
+    mod_n: i32,
 }
 fn main() {
     let mut relations = HashMap::new();
     let mut class: Vec<String> = Vec::new();
     let args = env::args().collect::<Vec<String>>();
-    let command: &str;
     if &args.len() < &2 {
         println!("You did not specify a source file.");
     } else {
         let mut f = File::open(String::from(args[1].as_ref())).unwrap();
         let mut contents = String::new();
-        f.read_to_string(&mut contents);
+        f.read_to_string(&mut contents).expect("Couldn't read source file");
         let res = int_f(contents);
         let total = res.1;
         let ti = total.iter();
@@ -34,11 +33,11 @@ fn main() {
                     }
                     let re = relations.entry(String::from(p.as_ref())).or_insert(
                         HashMap::new(),
-                    );
+                        );
                     for d in i.people.iter() {
                         if d != p {
-                            let refI = re.entry(String::from(d.as_ref())).or_insert(0);
-                            *refI += r.modN;
+                            let ref_i = re.entry(String::from(d.as_ref())).or_insert(0);
+                            *ref_i += r.mod_n;
                         }
                     }
                 }
@@ -46,14 +45,16 @@ fn main() {
         }
         relations = custom_rels(relations);
         let mut res = create_assign(relations, class);
+        let mut i = 0;
         for r in res.pods {
-            println!("Pod: {:?}", r.people);
+            println!("Pod {}: {:?}", i, r.people);
+            i += 1;
         }
     }
 }
 fn custom_rels(
     rels: HashMap<String, HashMap<String, i32>>,
-) -> HashMap<String, HashMap<String, i32>> {
+    ) -> HashMap<String, HashMap<String, i32>> {
     let mut nrels = rels.clone();
     println!("Would you like to create a custom association?");
     print!("(y/n)>");
@@ -85,18 +86,22 @@ fn custom_rels(
                 if got.is_some() {
                     *got.unwrap().entry(String::from(sec.trim())).or_insert(0) +=
                         amount.trim().parse::<i32>().unwrap();
-                    println!("Association edited!");
+                    println!("Association link 1 edited!");
 
                 } else {
-                    println!("That's not a valid person!");
+                    println!("{} is not a valid person!", first.trim());
                 }
             }
-            let mut ru = nrels.get_mut(sec.trim());
-            if ru.is_some() {
-                let mut rr = ru.unwrap().entry(String::from(first.trim())).or_insert(0);
-                *rr += amount.trim().parse::<i32>().unwrap();
+            {
+                let mut ru = nrels.get_mut(sec.trim());
+                if ru.is_some() {
+                    *ru.unwrap().entry(String::from(first.trim())).or_insert(0) += amount.trim().parse::<i32>().unwrap();
+                    println!("Association link 2 edited!");
+                } else {
+                    println!("{} is not a valid person!", sec.trim());
+                }
             }
-            println!("Would you like edit another association?");
+            println!("Would you like to edit another association?");
             print!("(y/n");
             io::stdout().flush().unwrap();
             let mut chos = String::new();
@@ -112,6 +117,7 @@ fn custom_rels(
     } else if buf.trim() == "n" || buf.trim() == "no" {
         return nrels;
     } else {
+        println!("Answer unrecognized");
         return custom_rels(nrels);
     }
 }
@@ -147,20 +153,16 @@ fn create_assign(rels: HashMap<String, HashMap<String, i32>>, class: Vec<String>
             }
             return Ordering::Equal;
         });
-        //self_c.reverse();
-        for d in &self_c {
-            // println!("for {}, {}{:?}", p, d, cur.get(d));
-        }
         self_c.remove(i);
         let fi = self_c.pop();
-        let mut fi_d = String::new();
+        let mut fi_d:String;
         if fi.is_none() {
             fi_d = String::from("");
         } else {
             fi_d = fi.unwrap();
         }
         let sec = self_c.pop();
-        let mut sec_d = String::new();
+        let mut sec_d : String;
         if sec.is_none() {
             sec_d = String::from("");
         } else {
@@ -177,7 +179,7 @@ fn create_assign(rels: HashMap<String, HashMap<String, i32>>, class: Vec<String>
     }
     Arrange {
         pods: pods,
-        modN: 0,
+        mod_n: 0,
     }
 }
 fn int_f(file: String) -> (i32, Vec<Arrange>) {
@@ -202,7 +204,7 @@ fn int_f(file: String) -> (i32, Vec<Arrange>) {
         }
         total.push(Arrange {
             pods: pds,
-            modN: p + 1,
+            mod_n: p + 1,
         });
     }
     (p_size, total)
